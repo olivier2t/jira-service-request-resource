@@ -1,0 +1,112 @@
+#!/bin/sh
+set -eu -o pipefail
+exec 3>&1 1>&2
+
+jq . < /dev/stdin > /tmp/input
+
+# SRC=$1
+
+# Usage
+#
+# resource:
+#   - name: jira-approval
+#     type: jira-approval-resource
+#     check_every: 20s
+#     source:
+#       jira_account: cycloid-demo
+#       jira_user_email: olivier.deturckheim@cycloid.io
+#       jira_user_token: 1234567890
+# ...
+#   - put: jira-approval
+#     params:
+#       service_desk_id: 1
+#       request_type_id: 58
+#       summary: "Request to deploy JIRA"
+#       description: "Request to deploy JIRA Service Management on AWS instances"
+
+jira_account=$(jq -r '.source.jira_account // empty' /tmp/input)
+if [ -z "$jira_account" ]; then
+  echo "JIRA account not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA account: $jira_account"
+
+jira_user_email=$(jq -r '.source.jira_user_email // empty' /tmp/input)
+if [ -z "$jira_user_email" ]; then
+  echo "JIRA user email not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA user email: $jira_user_email"
+
+jira_user_token=$(jq -r '.source.jira_user_token // empty' /tmp/input)
+if [ -z "$jira_user_token" ]; then
+  echo "JIRA user token not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+
+service_desk_id=$(jq -r '.params.service_desk_id // empty' /tmp/input)
+if [ -z "$service_desk_id" ]; then
+  echo "JIRA service desk ID not provided:" >&2
+  jq '.params // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA service desk ID: $service_desk_id"
+
+request_type_id=$(jq -r '.params.request_type_id // empty' /tmp/input)
+if [ -z "$request_type_id" ]; then
+  echo "JIRA request type ID not provided:" >&2
+  jq '.params // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA request type ID: $request_type_id"
+
+summary=$(jq -r '.params.summary // empty' /tmp/input)
+if [ -z "$summary" ]; then
+  echo "JIRA request type ID not provided:" >&2
+  jq '.params // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA request summary: $summary"
+
+org=$(jq -r '.params.org // empty' /tmp/input)
+if [ -z "$org" ]; then
+  echo "Cycloid env not provided:" >&2
+  jq '.params // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using Cycloid org: $org"
+
+project=$(jq -r '.params.project // empty' /tmp/input)
+if [ -z "$project" ]; then
+  echo "Cycloid project not provided:" >&2
+  jq '.params // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using Cycloid project: $project"
+
+env=$(jq -r '.params.env // empty' /tmp/input)
+if [ -z "$env" ]; then
+  echo "Cycloid env not provided:" >&2
+  jq '.params // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using Cycloid env: $env"
+
+description=$(jq -r '.params.description // empty' /tmp/input)
+
+response=$(curl -u ${jira_user_email}:${jira_user_token} \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -X POST \
+  -d '{"serviceDeskId":"'"${service_desk_id}"'","requestTypeId":"'"${request_type_id}"'","requestFieldValues": {"summary":"'"${summary}"'","description":"'"${description}"'","customfield_10066":"'"${org}"'","customfield_10067":"'"${project}"'","customfield_10068":"'"${env}"'"}}' \
+  --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
+echo "JIRA response: $response"
+
+jira_issue_key=$(echo $response | jq -r '.issueKey' | sed -e 's/"//g')
+jira_current_status=$(echo ${response} | jq -r '.currentStatus.status')
+jira_issue_url=$(echo $response | jq -r '._links.web')
+
+jq --null-input --arg issueKey "$jira_issue_key" --arg currentStatus "$jira_current_status" --arg issueUrl "$jira_issue_url" '{ "version": { "issueKey": $issueKey }, "metadata": [ {"name": "Status","value": $currentStatus}, {"name": "URL","value": $issueUrl} ] }' >&3

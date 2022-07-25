@@ -1,0 +1,63 @@
+#!/bin/sh
+set -eu -o pipefail
+exec 3>&1 1>&2
+
+jq . < /dev/stdin > /tmp/input
+
+SRC=$1
+
+# Usage
+#
+# resource:
+#   - name: jira-approval
+#     type: jira-approval-resource
+#     check_every: 20s
+#     source:
+#       jira_account: cycloid-demo
+#       jira_user_email: olivier.deturckheim@cycloid.io
+#       jira_user_token: 1234567890
+# ...
+#   - get: jira-approval
+
+jira_account=$(jq -r '.source.jira_account // empty' /tmp/input)
+if [ -z "$jira_account" ]; then
+  echo "JIRA account not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA account: $jira_account"
+
+jira_user_email=$(jq -r '.source.jira_user_email // empty' /tmp/input)
+if [ -z "$jira_user_email" ]; then
+  echo "JIRA user email not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using JIRA user email: $jira_user_email"
+
+jira_user_token=$(jq -r '.source.jira_user_token // empty' /tmp/input)
+if [ -z "$jira_user_token" ]; then
+  echo "JIRA user token not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+
+check_issue_key=$(jq -r '.version.issueKey // empty' /tmp/input | sed -e 's/"//g')
+if [ -z "$check_issue_key" ]; then
+  echo "JIRA issue key not provided:" >&2
+  jq '.version // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Searching JIRA issue key: $check_issue_key"
+
+# TODO check if 404 (or other error codes) before sending the result
+response=$(curl -u ${jira_user_email}:${jira_user_token} \
+  -H 'Accept: application/json' \
+  -X GET \
+  --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request/${check_issue_key})
+echo "JIRA response: $response"
+
+jira_current_status=$(echo ${response} | jq -r '.currentStatus.status')
+jira_issue_url=$(echo $response | jq -r '._links.web')
+
+jq --null-input --arg issueKey "$check_issue_key" --arg currentStatus "$jira_current_status" --arg issueUrl "$jira_issue_url" '{ "version": { "issueKey": $issueKey }, "metadata": [ {"name": "Status","value": $currentStatus}, {"name": "URL","value": $issueUrl} ] }' >&3
