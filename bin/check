@@ -59,7 +59,7 @@ for row in $(echo "${response}" | jq -r '.values[] | @base64'); do
   }
   jira_issue_key=$(_jq '.issueKey')
 
-  if [[ $jira_issue_key == $check_issue_key || $jira_issue_key > $check_issue_key ]]; then
+  if [[ -z $check_issue_key || $jira_issue_key == $check_issue_key || $jira_issue_key > $check_issue_key ]]; then
     jq --null-input --arg issueKey "$jira_issue_key" '{ "issueKey": $issueKey }' >>check
   fi
 done
