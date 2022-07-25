@@ -44,6 +44,7 @@ if [ -z "$check_issue_key" ]; then
   jq '.version // {}' /tmp/input >&2
   exit 1
 fi
+echo "Searching from JIRA issue key: $check_issue_key"
 
 echo '[' >check
 
