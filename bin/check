@@ -69,7 +69,7 @@ done
 
 # Remove the last comma at the end of the JSON file if there was at least one entry
 if [ $(wc -c check | awk '{print $1}') -gt 3 ]; then
-  truncate -s -1 check
+  sed -i '$ s/.$//' check
 fi
 
 echo ']' >>check
