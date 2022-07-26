@@ -38,6 +38,30 @@ if [ -z "$jira_user_token" ]; then
   exit 1
 fi
 
+org=$(jq -r '.source.org // empty' /tmp/input)
+if [ -z "$org" ]; then
+  echo "Cycloid env not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using Cycloid org: $org"
+
+project=$(jq -r '.source.project // empty' /tmp/input)
+if [ -z "$project" ]; then
+  echo "Cycloid project not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using Cycloid project: $project"
+
+env=$(jq -r '.source.env // empty' /tmp/input)
+if [ -z "$env" ]; then
+  echo "Cycloid env not provided:" >&2
+  jq '.source // {}' /tmp/input >&2
+  exit 1
+fi
+echo "Using Cycloid env: $env"
+
 check_issue_key=$(jq -r '.version.issueKey // empty' /tmp/input | sed -e 's/"//g')
 echo "Searching from JIRA issue key: $check_issue_key"
 
