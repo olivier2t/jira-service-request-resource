@@ -41,7 +41,7 @@ fi
 check_issue_key=$(jq -r '.version.issueKey // empty' /tmp/input | sed -e 's/"//g')
 echo "Searching from JIRA issue key: $check_issue_key"
 
-echo '[' >check
+echo '[' >/opt/resource/check
 
 response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -H 'Accept: application/json' \
@@ -55,15 +55,16 @@ for row in $(echo "${response}" | jq -r '.values[] | @base64'); do
   jira_issue_key=$(_jq '.issueKey')
 
   if [[ -z $check_issue_key || $jira_issue_key == $check_issue_key || $jira_issue_key > $check_issue_key ]]; then
-    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "issueKey": $issueKey }' >>check
-    echo -n ',' >>check
+    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "issueKey": $issueKey }' >>/opt/resource/check
+    echo -n ',' >>/opt/resource/check
+    echo $jira_issue_key
   fi
 done
 
 # Remove the last comma at the end of the JSON file if there was at least one entry
-if [[ $(wc -c check | awk '{print $1}') > 2 ]]; then
-  truncate -s -1 check
+if [[ $(wc -c /opt/resource/check | awk '{print $1}') > 2 ]]; then
+  truncate -s -1 /opt/resource/check
 fi
 
-echo ']' >>check
-cat check >&3
+echo ']' >>/opt/resource/check
+cat /opt/resource/check >&3
