@@ -59,4 +59,4 @@ echo "JIRA response: $response"
 
 jira_issue_url=$(echo $response | jq -r '._links.web')
 
-jq --null-input --arg issueKey "$check_issue_key" --arg issueUrl "$jira_issue_url" '{ "version": { "issueKey": $issueKey }, "metadata": [ {"name": "URL","value": $issueUrl} ] }' >&3
+jq --null-input --arg issueKey "$check_issue_key" --arg issueUrl "$jira_issue_url" '{ "version": { "ref": $issueKey }, "metadata": [ {"name": "URL","value": $issueUrl} ] }' >&3
