@@ -106,7 +106,6 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
 echo "JIRA response: $response"
 
 jira_issue_key=$(echo $response | jq -r '.issueKey' | sed -e 's/"//g')
-jira_current_status=$(echo ${response} | jq -r '.currentStatus.status')
 jira_issue_url=$(echo $response | jq -r '._links.web')
 
-jq --null-input --arg issueKey "$jira_issue_key" --arg currentStatus "$jira_current_status" --arg issueUrl "$jira_issue_url" '{ "version": { "issueKey": $issueKey }, "metadata": [ {"name": "Status","value": $currentStatus}, {"name": "URL","value": $issueUrl} ] }' >&3
+jq --null-input --arg issueKey "$jira_issue_key" --arg issueUrl "$jira_issue_url" '{ "version": { "issueKey": $issueKey }, "metadata": [ {"name": "URL","value": $issueUrl} ] }' >&3

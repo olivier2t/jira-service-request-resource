@@ -41,7 +41,7 @@ fi
 check_issue_key=$(jq -r '.version.issueKey // empty' /tmp/input | sed -e 's/"//g')
 echo "Searching from JIRA issue key: $check_issue_key"
 
-echo '[' >/opt/resource/check
+echo '[' >check
 
 response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -H 'Accept: application/json' \
@@ -49,27 +49,28 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
   --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
 
 for row_base64 in $(echo "${response}" | jq -r '.values[] | @base64'); do
-  # _jq() {
-  #   echo ${row_base64} | base64 -d | jq -r ${1}
-  # }
-  row=$(echo $row_base64 | base64 -d | jq -r '.')
+  _jq() {
+    echo ${row_base64} | base64 -d | jq -r ${1}
+  }
+  # row=$(echo $row_base64 | base64 -d | jq -r '.')
+  row=$(_jq '.')
   echo $row
   jira_issue_key=$(echo $row | jq -r '.issueKey' | sed -e 's/"//g')
   echo $jira_issue_key
   # jira_issue_key=$(_jq '.issueKey')
 
   if [[ -z $check_issue_key || $jira_issue_key == $check_issue_key || $jira_issue_key > $check_issue_key ]]; then
-    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "issueKey": $issueKey }' >>/opt/resource/check
-    echo -n ',' >>/opt/resource/check
+    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "issueKey": $issueKey }' >>check
+    echo -n ',' >>check
     echo '---------cat check-----------'
-    cat /opt/resource/check
+    cat check
   fi
 done
 
 # Remove the last comma at the end of the JSON file if there was at least one entry
-if [[ $(wc -c /opt/resource/check | awk '{print $1}') > 3 ]]; then
-  truncate -s -1 /opt/resource/check
+if [ $(wc -c check | awk '{print $1}') -gt 3 ]; then
+  truncate -s -1 check
 fi
 
-echo ']' >>/opt/resource/check
-cat /opt/resource/check >&3
+echo ']' >>check
+cat check >&3
