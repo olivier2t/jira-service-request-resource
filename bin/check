@@ -62,7 +62,7 @@ if [ -z "$env" ]; then
 fi
 echo "Using Cycloid env: $env"
 
-check_issue_key=$(jq -r '.version.issueKey // empty' /tmp/input | sed -e 's/"//g')
+check_issue_key=$(jq -r '.version.ref // empty' /tmp/input | sed -e 's/"//g')
 echo "Searching from JIRA issue key: $check_issue_key"
 
 echo '[' >check
