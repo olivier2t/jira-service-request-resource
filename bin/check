@@ -52,18 +52,15 @@ for row_base64 in $(echo "${response}" | jq -r '.values[] | @base64'); do
   _jq() {
     echo ${row_base64} | base64 -d | jq -r ${1}
   }
-  # row=$(echo $row_base64 | base64 -d | jq -r '.')
   row=$(_jq '.')
-  echo $row
   jira_issue_key=$(echo $row | jq -r '.issueKey' | sed -e 's/"//g')
-  echo $jira_issue_key
-  # jira_issue_key=$(_jq '.issueKey')
+  jira_issue_url=$(echo $response | jq '._links.web')
 
   if [[ -z $check_issue_key || $jira_issue_key == $check_issue_key || $jira_issue_key > $check_issue_key ]]; then
-    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "issueKey": $issueKey }' >>check
-    echo -n ',' >>check
-    echo '---------cat check-----------'
-    cat check
+    if [[ $org == $(_jq '.requestFieldValues.customfield_10066') && $project == $(_jq '.requestFieldValues.customfield_10067') && $env == $(_jq '.requestFieldValues.customfield_10068') ]]; then
+      jq --null-input --compact-output --arg issueKey "$jira_issue_key" --arg issueUrl "$jira_issue_url" '{ "ref": $issueKey, "URL": $issueUrl }' >>check
+      echo -n ',' >>check
+    fi
   fi
 done
 
