@@ -42,7 +42,7 @@ if [ -z "$jira_user_token" ]; then
   exit 1
 fi
 
-check_issue_key=$(jq -r '.version.ref // empty' /tmp/input | sed -e 's/"//g')
+check_issue_key=$(jq -r '.ref // empty' /tmp/input | sed -e 's/"//g')
 if [ -z "$check_issue_key" ]; then
   echo "JIRA issue key not provided:" >&2
   jq '.version // {}' /tmp/input >&2
