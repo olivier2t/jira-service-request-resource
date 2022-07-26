@@ -48,13 +48,13 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -X GET \
   --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
 
-for row in $(echo "${response}" | jq -r '.values[] | @base64'); do
+for row_base64 in $(echo "${response}" | jq -r '.values[] | @base64'); do
   # _jq() {
-  #   echo ${row} | base64 -d | jq -r ${1}
+  #   echo ${row_base64} | base64 -d | jq -r ${1}
   # }
-  response=$(echo $row | base64 -d | jq -r '.')
-  echo $response
-  jira_issue_key=$(echo $response | jq -r '.issueKey' | sed -e 's/"//g')
+  row=$(echo $row_base64 | base64 -d | jq -r '.')
+  echo $row
+  jira_issue_key=$(echo $row | jq -r '.issueKey' | sed -e 's/"//g')
   echo $jira_issue_key
   # jira_issue_key=$(_jq '.issueKey')
 
