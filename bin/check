@@ -74,13 +74,15 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
 
 for row_base64 in $(echo "${response}" | jq -r '.values[] | @base64'); do
   _jq() {
-    echo ${row_base64} | base64 -d | jq -r ${1}
+    echo ${row_base64} | base64 -d | jq -r ${1} | sed -e 's/"//g'
   }
   row=$(_jq '.')
-  jira_issue_key=$(echo $row | jq -r '.issueKey' | sed -e 's/"//g')
-  jira_org=$(echo $row | jq -r '.requestFieldValues.customfield_10066')
-  jira_project=$(echo $row | jq -r '.requestFieldValues.customfield_10067')
-  jira_env=$(echo $row | jq -r '.requestFieldValues.customfield_10068')
+  echo $row
+  echo "---"
+  jira_issue_key=$(_jq '.issueKey')
+  jira_org=$(_jq '.requestFieldValues.customfield_10066')
+  jira_project=$(_jq '.requestFieldValues.customfield_10067')
+  jira_env=$(_jq '.requestFieldValues.customfield_10068')
 
   if [[ $org == $jira_org && $project == $jira_project && $env == $jira_env ]]; then
     jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "ref": $issueKey }' >>check
