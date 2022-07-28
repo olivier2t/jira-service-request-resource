@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu -o pipefail
 exec 3>&1 1>&2
 
@@ -89,9 +89,10 @@ for row_base64 in $(echo "${response}" | jq -r '.values[] | @base64'); do
 done
 
 # Remove the last comma at the end of the JSON file if there was at least one entry
-if [ $(wc -c check | awk '{print $1}') -gt 3 ]; then
-  sed -i '$ s/.$//' check
-fi
+# if [ $(wc -c check | awk '{print $1}') -gt 3 ]; then
+#   sed -i '$ s/.$//' check
+# fi
+sed -i '$ s/,$//' check
 
 echo ']' >>check
 cat check >&3
