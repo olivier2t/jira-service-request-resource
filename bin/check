@@ -78,20 +78,17 @@ for row_base64 in $(echo "${response}" | jq -r '.values[] | @base64'); do
   }
   row=$(_jq '.')
   jira_issue_key=$(echo $row | jq -r '.issueKey' | sed -e 's/"//g')
-  jira_issue_url=$(echo $response | jq '._links.web')
+  jira_org=$(echo $row | jq -r '.requestFieldValues.customfield_10066')
+  jira_project=$(echo $row | jq -r '.requestFieldValues.customfield_10067')
+  jira_env=$(echo $row | jq -r '.requestFieldValues.customfield_10068')
 
-  if [[ -z $check_issue_key || $jira_issue_key == $check_issue_key || $jira_issue_key > $check_issue_key ]]; then
-    if [[ $org == $(_jq '.requestFieldValues.customfield_10066') && $project == $(_jq '.requestFieldValues.customfield_10067') && $env == $(_jq '.requestFieldValues.customfield_10068') ]]; then
-      jq --null-input --compact-output --arg issueKey "$jira_issue_key" --arg issueUrl "$jira_issue_url" '{ "ref": $issueKey, "URL": $issueUrl }' >>check
-      echo -n ',' >>check
-    fi
+  if [[ $org == $jira_org && $project == $jira_project && $env == $jira_env ]]; then
+    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "ref": $issueKey }' >>check
+    echo -n ',' >>check
   fi
 done
 
 # Remove the last comma at the end of the JSON file if there was at least one entry
-# if [ $(wc -c check | awk '{print $1}') -gt 3 ]; then
-#   sed -i '$ s/.$//' check
-# fi
 sed -i '$ s/,$//' check
 
 echo ']' >>check

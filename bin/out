@@ -103,7 +103,6 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -X POST \
   -d '{"serviceDeskId":"'"${service_desk_id}"'","requestTypeId":"'"${request_type_id}"'","requestFieldValues": {"summary":"'"${summary}"'","description":"'"${description}"'","customfield_10066":"'"${org}"'","customfield_10067":"'"${project}"'","customfield_10068":"'"${env}"'"}}' \
   --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
-echo "JIRA response: $response"
 
 jira_issue_key=$(echo $response | jq -r '.issueKey' | sed -e 's/"//g')
 jira_issue_url=$(echo $response | jq -r '._links.web')

@@ -55,7 +55,6 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -H 'Accept: application/json' \
   -X GET \
   --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request/${check_issue_key})
-echo "JIRA response: $response"
 
 jira_issue_url=$(echo $response | jq -r '._links.web')
 
