@@ -81,7 +81,7 @@ for row_response in $(echo "${response}" | jq -r '.values[] | @base64'); do
   echo "---"
   jira_issue_key=$(_jq $row_response '.issueKey' | sed -e 's/"//g')
 
-  jq --null-input --compact-output '{ "ref": IP-95 }' >>check
+  cat '{ "ref": IP-95 },' >>check
 
   org_match=0
   project_match=0
