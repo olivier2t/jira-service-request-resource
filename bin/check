@@ -81,6 +81,8 @@ for row_response in $(echo "${response}" | jq -r '.values[] | @base64'); do
   echo "---"
   jira_issue_key=$(_jq $row_response '.issueKey' | sed -e 's/"//g')
 
+  jq --null-input --compact-output '{ "ref": IP-95 }' >>check
+
   org_match=0
   project_match=0
   env_match=0
@@ -104,6 +106,8 @@ done
 
 # Remove the last comma at the end of the JSON file if there was at least one entry
 sed -i '$ s/,$//' check
+# Remove the line feeds
+sed -i ':a;N;$!ba;s/\n//g' check
 
 echo ']' >>check
 cat check >&3
