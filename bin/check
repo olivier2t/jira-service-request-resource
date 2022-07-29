@@ -67,6 +67,11 @@ echo "Searching from JIRA issue key: $check_issue_key"
 
 echo '[' >check
 
+response=$(curl -u ${jira_user_email}:${jira_user_token} \
+  -H 'Accept: application/json' \
+  -X GET \
+  --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
+
 for row_response in $(echo "${response}" | jq -r '.values[] | @base64'); do
   _jq() {
     echo $1 | base64 -d | jq -r $2
