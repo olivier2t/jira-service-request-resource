@@ -101,7 +101,7 @@ response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -X POST \
-  -d '{"serviceDeskId":"'"${service_desk_id}"'","requestTypeId":"'"${request_type_id}"'","requestFieldValues": {"summary":"'"${summary}"'","description":"'"${description}"'","customfield_10066":"'"${org}"'","customfield_10067":"'"${project}"'","customfield_10068":"'"${env}"'"}}' \
+  -d '{"serviceDeskId":"'"${service_desk_id}"'","requestTypeId":"'"${request_type_id}"'","requestFieldValues": {"summary":"'"${summary}"'","description":"'"${description}"'","customfield_10069":"'"${org}"'","customfield_10070":"'"${project}"'","customfield_10071":"'"${env}"'"}}' \
   --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
 
 jira_issue_key=$(echo $response | jq -r '.issueKey' | sed -e 's/"//g')
