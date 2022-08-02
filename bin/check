@@ -62,30 +62,24 @@ if [ -z "$env" ]; then
 fi
 echo "Using Cycloid env: $env"
 
-check_issue_key=$(jq -r '.version.ref // empty' /tmp/input | sed -e 's/"//g')
-echo "Searching from JIRA issue key: $check_issue_key"
-
 echo '[' >check
-echo '{ "ref": "IP-95" },' >>check
 
 response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -H 'Accept: application/json' \
   -X GET \
   --url https://${jira_account}.atlassian.net/rest/servicedeskapi/request)
 
-for row_response in $(echo "${response}" | jq -r '.values[] | @base64'); do
+for row_response in $(echo "${response}" | jq -r '.values[] | @base64' | tac); do
   _jq() {
     echo $1 | base64 -d | jq -r $2
   }
   row=$(_jq $row_response '.')
-  echo $row
-  echo "---"
   jira_issue_key=$(_jq $row_response '.issueKey' | sed -e 's/"//g')
 
   org_match=0
   project_match=0
   env_match=0
-  for row_requestFieldValues in $(_jq $row_response '.requestFieldValues[] | @base64'); do
+  for row_requestFieldValues in $(echo "${row}" | jq -r '.requestFieldValues[] | @base64'); do
     if [[ $(_jq $row_requestFieldValues '.label') == "org" && $(_jq $row_requestFieldValues '.value') == $org ]]; then
       org_match=1
     fi
@@ -98,7 +92,7 @@ for row_response in $(echo "${response}" | jq -r '.values[] | @base64'); do
   done
 
   if [[ $org_match -eq 1 && $project_match -eq 1 && $env_match -eq 1 ]]; then
-    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "ref": "'$issueKey'" }' >>check
+    jq --null-input --compact-output --arg issueKey "$jira_issue_key" '{ "ref": $issueKey }' >>check
     echo -n ',' >>check
   fi
 done
@@ -109,5 +103,4 @@ sed -i '$ s/,$//' check
 sed -i ':a;N;$!ba;s/\n//g' check
 
 echo ']' >>check
-cat check
 cat check >&3
