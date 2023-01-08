@@ -95,7 +95,7 @@ if [ -z "$summary" ]; then
 fi
 echo "Using JIRA request summary: $summary"
 
-description=$(jq -r '.params.description // empty' /tmp/input)
+description=$(jq -r '. // empty' tfstate/plan.json)
 
 response=$(curl -u ${jira_user_email}:${jira_user_token} \
   -H 'Accept: application/json' \
